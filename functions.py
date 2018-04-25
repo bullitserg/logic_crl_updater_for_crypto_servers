@@ -184,7 +184,7 @@ def main_function(server, logger):
     while True:
 
         # загружаем сведения
-        # get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
+        get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
         crl_f = join(temp_dir, crl_f_t % server)
 
         # установка верхнего и нижнего порога поиска
