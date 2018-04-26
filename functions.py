@@ -3,7 +3,6 @@ from ets.ets_certificate_lib import Crl
 from ets.ets_mysql_lib import MysqlConnection as Mc
 from os.path import normpath, join
 from datetime import datetime, timedelta
-from ets.ets_cache_lib import CacheDict
 from time import sleep
 from hashlib import md5
 from itertools import cycle
@@ -17,12 +16,12 @@ install_cmd = '''/opt/cprocsp/bin/amd64/certmgr -inst -crl -store mCA -f "%s"'''
 
 temp_dir = normpath(temp_dir)
 
-cached_dict = CacheDict(timeout=timeout)
-overdue_notified_cached_dict = CacheDict(timeout=timeout)
-ignored_cached_dict = CacheDict(timeout=timeout)
-url_cached_dict = CacheDict(timeout=timeout)
-hash_cached_dict = CacheDict(timeout=timeout)
-status_cached_dict = CacheDict(timeout=timeout)
+cached_dict = {}
+overdue_notified_cached_dict = {}
+ignored_cached_dict = {}
+url_cached_dict = {}
+hash_cached_dict = {}
+status_cached_dict = {}
 
 cn = Mc(connection=Mc.MS_CERT_INFO_CONNECT)
 
@@ -87,8 +86,8 @@ def download_crl(server, _auth_key, _crl, logger):
             # если еще не создана запись hash_cached_dict, то создаем ее
             if _auth_key not in hash_cached_dict.keys():
                 hash_cached_dict[_auth_key] = {}
-                # так как первое выполнение, то предыдущий хэш неизвестен
-                hash_cached_dict[_auth_key]['last_hash'] = ''
+                # так как первое выполнение, то предыдущий хэш неизвестен, создаем пустое множество для хешей
+                hash_cached_dict[_auth_key]['last_hash'] = []
 
             # пишем актуальный хэш
             hash_cached_dict[_auth_key]['actual_hash'] = _hash
@@ -116,8 +115,8 @@ def install_crl(server, _auth_key, _crl, file, logger):
     if _auth_key not in status_cached_dict.keys():
         status_cached_dict[_auth_key] = {'status': None, 'install_tries': 0}
 
-    # если совпадают хеши и ставили уже max_install_tries раз, то не будем повторяться
-    if hash_cached_dict[_auth_key]['last_hash'] == hash_cached_dict[_auth_key]['actual_hash']:
+    # если c таким хешом пакет уже устанавливался и ставили уже max_install_tries раз, то не будем повторяться
+    if hash_cached_dict[_auth_key]['actual_hash'] in hash_cached_dict[_auth_key]['last_hash']:
         if status_cached_dict[_auth_key]['install_tries'] == max_install_tries:
             # укажем, удачно или нет завершились установки
             if status_cached_dict[_auth_key]['status']:
@@ -168,8 +167,8 @@ def install_crl(server, _auth_key, _crl, file, logger):
     # увеличиваем количество попыток установки
     status_cached_dict[_auth_key]['install_tries'] = inst_tries + 1
 
-    # переназначаем значение хеша
-    hash_cached_dict[_auth_key]['last_hash'] = hash_cached_dict[_auth_key]['actual_hash']
+    # добавляем значение хеша в last_hash
+    hash_cached_dict[_auth_key]['last_hash'].append(hash_cached_dict[_auth_key]['actual_hash'])
 
 
 def updater(server, _crl, logger):
@@ -198,7 +197,13 @@ def main_function(server, logger):
         # формируем основные наборы данных
         crl_i = crl_o_f.get_info(key='AuthKeyID')
         crl_k = crl_i.keys()
-        crl_v = crl_i.values()
+
+        crl_v_all = crl_i.values()
+        # получаем список AuthKeyID актуальных crl
+        crl_all_id_keys = [id_key['AuthKeyID'] for id_key in crl_v_all]
+
+        # фильтруем значения, удаляя те, где не определен NextUpdate
+        crl_v = list(filter(lambda c: c['NextUpdate'], crl_v_all))
 
         # получаем списки словарей актуальных crl
         crl_ok = list(filter(lambda c: c['NextUpdate'] > end_time, crl_v))
@@ -254,48 +259,36 @@ def main_function(server, logger):
             # пробуем обновить
             updater(server, crl, logger)
 
+        # функция удаления ненужных сведений из словарей
+        def drop_data(_key_id):
+            map(lambda i: i.pop(_key_id, None),
+                [overdue_notified_cached_dict,
+                 url_cached_dict,
+                 cached_dict,
+                 hash_cached_dict,
+                 status_cached_dict]
+                )
+
         # получаем AuthKeyID, которые больше не актуальны, по ним успешно установлено
         crl_ok_inst_keys = set(cached_id_keys).intersection(set(crl_ok_id_keys))
-
         # выводим в лог информацию по успешно установленным crl и удаляем их из кешей
         for key_id in crl_ok_inst_keys:
-            map(lambda i: i.pop(key_id, None),
-                [overdue_notified_cached_dict,
-                url_cached_dict,
-                cached_dict,
-                hash_cached_dict,
-                status_cached_dict]
-                )
+            drop_data(key_id)
             logger.info(log_add('''CRL OK installed last running. Dropped''') % crl_i[key_id])
 
         # получаем AuthKeyID, которые больше не актуальны, по ним вышел срок установки
         crl_overtime_pass_keys = set(cached_id_keys).intersection(set(crl_overdue_pass_keys))
-
         # выводим в лог информацию по crl, по которым истек срок установки и удаляем их из кешей
         for key_id in crl_overtime_pass_keys:
-            map(lambda i: i.pop(key_id, None),
-                [overdue_notified_cached_dict,
-                url_cached_dict,
-                cached_dict,
-                hash_cached_dict,
-                status_cached_dict]
-                )
+            drop_data(key_id)
             logger.info(log_add('''CRL install time is over. Dropped''') % crl_i[key_id])
 
-        # если что то так и не получилось обновить за timeout, то сбрасываем
-        map(lambda i: i.collect(),
-            [overdue_notified_cached_dict,
-            ignored_cached_dict,
-            url_cached_dict,
-            url_cached_dict,
-            hash_cached_dict,
-            status_cached_dict]
-            )
-
-        dropped_crl_i = cached_dict.collect()
-
-        for key_id in dropped_crl_i:
-            logger.info(log_add('''CRL dropped by timeout''') % dropped_crl_i[key_id])
+        # получаем AuthKeyID, которые в предыдущий раз были в полных сведениях, а сейчас пропали
+        crl_all_id_pass_key = set(cached_id_keys).symmetric_difference(set(crl_all_id_keys))
+        # выводим в лог информацию по crl, которые в предыдущий раз были в полных сведениях, а сейчас пропали
+        for key_id in crl_all_id_pass_key:
+            drop_data(key_id)
+            logger.info(log_add('''CRL status is unknown. Dropped''') % crl_i[key_id])
 
         sleep(sleep_time)
 
