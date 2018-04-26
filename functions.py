@@ -153,8 +153,8 @@ def install_crl(server, _auth_key, _crl, file, logger):
         logger.info(log_add('''Install CRL''') % _crl)
 
     # непосредственно установка
-#    actual_inst_status, error = inst_crl(server, file, is_local=False, test_mode=True, remote_dir=remote_dir)
-    actual_inst_status, error = True, None
+    actual_inst_status, error = inst_crl(server, file, is_local=True, test_mode=True, remote_dir=remote_dir)
+#    actual_inst_status, error = True, None
 
     if actual_inst_status:
         status_cached_dict[_auth_key]['status'] = True
@@ -183,7 +183,7 @@ def main_function(server, logger):
     while True:
 
         # загружаем сведения
-#        get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
+        get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
         crl_f = join(temp_dir, crl_f_t % server)
 
         # установка верхнего и нижнего порога поиска
