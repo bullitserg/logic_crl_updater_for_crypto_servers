@@ -178,7 +178,7 @@ def updater(server, _crl, logger):
 
 
 def main_function(server, logger):
-    logger.info('''Daemon started (server: %s, search timeout: %s, drop timeout: %s)''' % (server, sleep_time, timeout))
+    logger.info('''Daemon started (server: %s, wait timeout: %s, drop timeout: %s)''' % (server, sleep_time, timeout))
 
     while True:
 
@@ -261,13 +261,11 @@ def main_function(server, logger):
 
         # функция удаления ненужных сведений из словарей
         def drop_data(_key_id):
-            map(lambda i: i.pop(_key_id, None),
-                [overdue_notified_cached_dict,
-                 url_cached_dict,
-                 cached_dict,
-                 hash_cached_dict,
-                 status_cached_dict]
-                )
+            overdue_notified_cached_dict.pop(_key_id, None)
+            url_cached_dict.pop(_key_id, None)
+            cached_dict.pop(_key_id, None)
+            hash_cached_dict.pop(_key_id, None)
+            status_cached_dict.pop(_key_id, None)
 
         # получаем AuthKeyID, которые больше не актуальны, по ним успешно установлено
         crl_ok_inst_keys = set(cached_id_keys).intersection(set(crl_ok_id_keys))
