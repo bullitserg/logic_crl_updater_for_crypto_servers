@@ -183,7 +183,7 @@ def main_function(server, logger):
     while True:
 
         # загружаем сведения
-        get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
+#        get_info_file(server, file_type='CRL', out_dir=temp_dir, remote_dir=remote_dir)
         crl_f = join(temp_dir, crl_f_t % server)
 
         # установка верхнего и нижнего порога поиска
@@ -284,7 +284,7 @@ def main_function(server, logger):
             logger.info(log_add('''CRL install time is over. Dropped''') % crl_i[key_id])
 
         # получаем AuthKeyID, которые в предыдущий раз были в полных сведениях, а сейчас пропали
-        crl_all_id_pass_key = set(cached_id_keys).symmetric_difference(set(crl_all_id_keys))
+        crl_all_id_pass_key = set(cached_id_keys).difference(set(crl_all_id_keys))
         # выводим в лог информацию по crl, которые в предыдущий раз были в полных сведениях, а сейчас пропали
         for key_id in crl_all_id_pass_key:
             drop_data(key_id)
