@@ -17,6 +17,6 @@ def init_log_config(log_file):
 
 # описываем функцию, которая будет возвращать логгер с нужным именем
 # (названием главной функции, в которой произошло событие)
-def logger():
-    return logging.getLogger('crl_updater')
+def logger(logger_name):
+    return logging.getLogger(logger_name)
 

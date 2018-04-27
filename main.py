@@ -39,7 +39,8 @@ if __name__ == '__main__':
                 # инициируем лог-файл
                 log_file = join(normpath(log_dir), log_name_mask % namespace.server)
                 init_log_config(log_file)
-                logger = logger()
+                logger_name = 'server_%s' % namespace.server
+                logger = logger(logger_name)
 
                 # запускаем основной процесс
                 main_function(namespace.server, logger)
