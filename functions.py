@@ -153,15 +153,15 @@ def install_crl(server, _auth_key, _crl, file, logger):
         logger.info(log_add('''Install CRL''') % _crl)
 
     # непосредственно установка
-    actual_inst_status, error = inst_crl(server, file, is_local=True, test_mode=True, remote_dir=remote_dir)
+    actual_inst_status, error = inst_crl(server, file, is_local=True, test_mode=False, remote_dir=remote_dir)
 #    actual_inst_status, error = True, None
 
     if actual_inst_status:
         status_cached_dict[_auth_key]['status'] = True
-        logger.info(log_add('''Installation finished successfully''') % _crl)
+        logger.info(log_add('''Installation complete successfully''') % _crl)
     else:
         status_cached_dict[_auth_key]['status'] = False
-        logger.info(log_add('''Installation finished with error "%(error)s"''') %
+        logger.info(log_add('''Installation complete with error "%(error)s"''') %
                     {'AuthKeyID': _crl['AuthKeyID'], 'error': error, 'NextUpdate': _crl['NextUpdate']})
 
     # увеличиваем количество попыток установки
@@ -239,7 +239,7 @@ def main_function(server, logger):
                     overdue_notified_cached_dict[crl['AuthKeyID']] = True
                     logger.info(log_add('''(!!) CRL overdue''') % crl)
 
-                logger.info(log_add('''CRL updating...''') % crl)
+                logger.info(log_add('''CRL is updating...''') % crl)
             else:
                 logger.info(log_add('''Repeat CRL updating (is overdue)...''') % crl)
 
@@ -251,8 +251,8 @@ def main_function(server, logger):
             # если найден новый AuthKeyID, то кешируем его
             if crl['AuthKeyID'] not in cached_id_keys:
                 cached_dict[crl['AuthKeyID']] = crl
-                logger.info(log_add('''(!) CRL overdue for some minute''') % crl)
-                logger.info(log_add('''CRL updating...''') % crl)
+                logger.info(log_add('''(!) CRL will be overdue for a few minute''') % crl)
+                logger.info(log_add('''CRL is updating...''') % crl)
             else:
                 logger.info(log_add('''Repeat CRL updating (wait overdue)...''') % crl)
 
@@ -272,7 +272,7 @@ def main_function(server, logger):
         # выводим в лог информацию по успешно установленным crl и удаляем их из кешей
         for key_id in crl_ok_inst_keys:
             drop_data(key_id)
-            logger.info(log_add('''CRL OK installed last running. Dropped''') % crl_i[key_id])
+            logger.info(log_add('''CRL OK installed''') % crl_i[key_id])
 
         # получаем AuthKeyID, которые больше не актуальны, по ним вышел срок установки
         crl_overtime_pass_keys = set(cached_id_keys).intersection(set(crl_overdue_pass_keys))
