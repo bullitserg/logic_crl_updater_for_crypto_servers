@@ -173,7 +173,7 @@ def updater(server, _crl, logger):
 
 
 def main_function(server, logger):
-    logger.info(log_add('start', no_auth=True) % (server, sleep_time, timeout))
+    logger.info(log_add('start', no_auth=True) % (server, sleep_time, timeout, in_future_time))
 
     while True:
 
