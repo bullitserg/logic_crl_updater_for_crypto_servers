@@ -5,6 +5,8 @@ sleep_time = 10         # время задержки выполнения, seco
 max_install_tries = 2   # максимальное количество попыток установки одного и того же crl
 server_list = [1, 2, 4, 5]
 
+language = 'ENG'
+
 temp_dir = 'C:/Users/belim/PycharmProjects/Crl updater for crypto servers/temp'
 remote_dir = '/home/application/crl_updater/'
 
