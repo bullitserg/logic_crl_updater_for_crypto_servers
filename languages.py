@@ -1,4 +1,4 @@
-from config import language
+from config import language, crl_log_datetime_separator_len
 
 translations = {
     'ENG': {'url_not_found': 'URL not found. Dropped',
@@ -45,5 +45,7 @@ def log_add(key, no_auth=False):
     if no_auth:
         return translations[language][key]
     else:
-        return ' '.join(['''%(AuthKeyID)s # ''', translations[language][key], '''(%(NextUpdate)s)'''])
+        return ' '.join(['''%(AuthKeyID)s # ''',
+                         str(translations[language][key]).ljust(crl_log_datetime_separator_len),
+                         '''(%(NextUpdate)s)'''])
 
