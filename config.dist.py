@@ -6,6 +6,7 @@ max_install_tries = 2   # максимальное количество попы
 server_list = [1, 2, 4, 5]
 
 language = 'ENG'
+crl_log_datetime_separator_len = 60
 
 temp_dir = 'C:/Users/belim/PycharmProjects/Crl updater for crypto servers/temp'
 remote_dir = '/home/application/crl_updater/'
