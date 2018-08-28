@@ -32,7 +32,7 @@ def get_urls(server, _auth_key, _crl, logger):
     if _auth_key not in url_cached_dict.keys():
 
         with cn.open():
-            _urls = cn.execute_query(get_urls_query % _auth_key)
+            _urls = cn.execute_query(get_urls_query % (_auth_key, _auth_key))
         if _urls:
             # собираем словарь
             keys = range(1, len(_urls) + 1)
